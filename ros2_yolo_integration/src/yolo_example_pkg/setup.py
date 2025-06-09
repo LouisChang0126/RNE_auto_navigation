@@ -22,6 +22,7 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
+            "main = yolo_example_pkg.main:main",
             "yolo_node = yolo_example_pkg.yolo_test:main",
             "darth_vader_detect_node = yolo_example_pkg.darth_vader_detect:main",
         ],
