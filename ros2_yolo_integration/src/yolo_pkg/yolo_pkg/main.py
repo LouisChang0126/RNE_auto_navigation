@@ -55,8 +55,8 @@ def main():
     )
     camera_geometry = CameraGeometry(yolo_depth_extractor)
 
-    # user_input = menu()
-    user_input = "1"
+    user_input = menu()
+    # user_input = "3"
 
     try:
         while True:

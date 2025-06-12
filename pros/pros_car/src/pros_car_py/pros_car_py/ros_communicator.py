@@ -91,6 +91,14 @@ class RosCommunicator(Node):
             1,
         )
 
+        self.latest_action_detection = None
+        self.action_detection_sub = self.create_subscription(
+            String,
+            "/action_detection",
+            self.action_detection_callback,
+            1,
+        )
+        
         # publish car_C_rear_wheel and car_C_front_wheel
         self.publisher_rear = self.create_publisher(
             Float32MultiArray, DeviceDataTypeEnum.car_C_rear_wheel, 1
@@ -278,6 +286,14 @@ class RosCommunicator(Node):
         if self.latest_camera_x_multi_depth is None:
             return None
         return self.latest_camera_x_multi_depth
+
+    def action_detection_callback(self, msg):
+        self.latest_action_detection = msg
+
+    def get_latest_action_detection(self):
+        if self.latest_action_detection is None:
+            return None
+        return self.latest_action_detection
 
     # YOLO coordinates callback
     def yolo_detection_position_callback(self, msg):

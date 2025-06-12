@@ -19,6 +19,16 @@ class Nav2Processing:
         self.recordFlag = 0
         self.goal_published_flag = False
 
+        self.state = 'SEARCHING'
+        self.rotation_step = 0
+        self.forward_step = 0
+        self.rotation_count = 0
+        self.rotation_wise = True  # True: clockwise, False: counterclockwise
+        
+        # 參數（可根據機器人調整）
+        self.rotation_steps = 180  # 完成一圈（360度）所需的步數
+        self.forward_steps = 200  # 每次前進的步數
+
     def reset_nav_process(self):
         self.finishFlag = False
         self.recordFlag = 0
@@ -212,64 +222,100 @@ class Nav2Processing:
         return action
 
     def camera_nav_unity(self):
-        """
-        YOLO 目標資訊 (yolo_target_info) 說明：
+        """實現導航邏輯，返回動作字串"""
+        action_detection = self.data_processor.get_action_detection()
 
-        - 索引 0 (index 0)：
-            - 表示是否成功偵測到目標
-            - 0：未偵測到目標
-            - 1：成功偵測到目標
-
-        - 索引 1 (index 1)：
-            - 目標的深度距離 (與相機的距離，單位為公尺)，如果沒偵測到目標就回傳 0
-            - 與目標過近時(大約 40 公分以內)會回傳 -1
-
-        - 索引 2 (index 2)：
-            - 目標相對於畫面正中心的像素偏移量
-            - 若目標位於畫面中心右側，數值為正
-            - 若目標位於畫面中心左側，數值為負
-            - 若沒有目標則回傳 0
-
-        畫面 n 個等分點深度 (camera_multi_depth) 說明 :
-
-        - 儲存相機畫面中央高度上 n 個等距水平點的深度值。
-        - 若距離過遠、過近（小於 40 公分）或是實體相機有時候深度會出一些問題，則該點的深度值將設定為 -1。
-        """
-        yolo_target_info = self.data_processor.get_yolo_target_info()
-        camera_multi_depth = self.data_processor.get_camera_x_multi_depth()
-
-        if camera_multi_depth == None or yolo_target_info == None:
+        if action_detection == None:
             return "STOP"
-            
-        yolo_target_info[1] *= 100.0
-        yolo_target_info[2] *= 100.0
-        camera_multi_depth = list(
-            map(lambda x: x * 100.0, self.data_processor.get_camera_x_multi_depth())
-        )
-
-        camera_forward_depth = self.filter_negative_one(camera_multi_depth[6:14])
-        camera_left_depth = self.filter_negative_one(camera_multi_depth[0:7])
-        camera_right_depth = self.filter_negative_one(camera_multi_depth[13:20])
+        
         action = "STOP"
-        limit_distance = 10.0
-        print(yolo_target_info)
-        if all(depth > limit_distance for depth in camera_forward_depth):
-            if yolo_target_info[0] == 1.0:
-                if yolo_target_info[2] > 200.0:
-                    action = "CLOCKWISE_ROTATION_SLOW"
-                elif yolo_target_info[2] < -200.0:
-                    action = "COUNTERCLOCKWISE_ROTATION_SLOW"
-                else:
-                    if yolo_target_info[1] < 2.0:
-                        action = "STOP"
-                    else:
-                        action = "FORWARD_SLOW"
+        print(f'Current state: {self.state}, Action detection: {action_detection}')
+
+        if action_detection == 'STOP':
+            return 'STOP'
+        if self.state == 'SEARCHING':
+            # 正在旋轉搜尋皮卡丘
+            self.rotation_step += 1
+            action = 'CLOCKWISE_ROTATION' if self.rotation_wise else 'COUNTERCLOCKWISE_ROTATION'
+            # print(f'Rotating, step {self.rotation_step}/{self.rotation_steps}')
+            
+            if action_detection == 'COUNTERCLOCKWISE_ROTATION':
+                # 發現皮卡丘在左邊
+                self.rotation_wise = False
+                self.rotation_step = 0
+                self.rotation_count = 0
+                action = 'COUNTERCLOCKWISE_ROTATION'
+                print('Pikachu detected in left, turning left')
+            elif action_detection == 'CLOCKWISE_ROTATION':
+                # 發現皮卡丘在右邊
+                self.rotation_wise = True
+                self.rotation_step = 0
+                self.rotation_count = 0
+                action = 'CLOCKWISE_ROTATION'
+                print('Pikachu detected in right, turning right')
+            elif action_detection == 'FORWARD':
+                # 發現皮卡丘，進入追蹤狀態
+                self.state = 'FOLLOWING'
+                self.rotation_step = 0
+                self.rotation_count = 0
+                action = 'FORWARD_SLOW'
+                print('Pikachu detected, switching to FOLLOWING state')
+            elif self.rotation_step >= self.rotation_steps:
+                # 完成一圈旋轉
+                self.rotation_count += 1
+                self.rotation_step = 0
+                self.state = 'MOVING_FORWARD'
+                self.forward_step = 0
+                action = 'FORWARD'
+                print('No Pikachu detected after rotation, moving forward')
+
+        elif self.state == 'FOLLOWING':
+            # 追蹤皮卡丘
+            if action_detection == 'STOP':
+                action = 'STOP'
+                print('Pikachu in middle-bottom, stopping')
+                self.state = 'SEARCHING'
+                self.rotation_step = 0
+                self.rotation_count = 0
+            elif action_detection == 'FORWARD':
+                action = 'FORWARD_SLOW'
+                print('Moving forward towards Pikachu')
+            elif action_detection == 'COUNTERCLOCKWISE_ROTATION':
+                # 發現皮卡丘在左邊
+                self.rotation_wise = False
+                action = 'COUNTERCLOCKWISE_ROTATION'
+                print('Pikachu detected in left, turning left')
+            elif action_detection == 'CLOCKWISE_ROTATION':
+                # 發現皮卡丘在右邊
+                self.rotation_wise = True
+                action = 'CLOCKWISE_ROTATION'
+                print('Pikachu detected in right, turning right')
             else:
-                action = "FORWARD"
-        elif any(depth < limit_distance for depth in camera_right_depth):
-            action = "COUNTERCLOCKWISE_ROTATION"
-        elif any(depth < limit_distance for depth in camera_left_depth):
-            action = "CLOCKWISE_ROTATION"
+                # 失去皮卡丘，回到搜尋狀態
+                self.state = 'SEARCHING'
+                self.rotation_step = 0
+                action = 'CLOCKWISE_ROTATION' if self.rotation_wise else 'COUNTERCLOCKWISE_ROTATION'
+                print('Lost Pikachu, switching to SEARCHING state')
+
+        elif self.state == 'MOVING_FORWARD':
+            # 前進一段距離後繼續搜尋
+            self.forward_step += 1
+            action = 'FORWARD'
+            # print(f'Moving forward, step {self.forward_step}/{self.forward_steps}')
+            if self.forward_step >= self.forward_steps:
+                self.state = 'SEARCHING'
+                self.rotation_step = 0
+                action = 'CLOCKWISE_ROTATION' if self.rotation_wise else 'COUNTERCLOCKWISE_ROTATION'
+                print('Finished moving forward, resuming search')
+
+        # 如果收到 ROTATE，重置搜尋
+        if action_detection == 'ROTATE' and (self.state == 'FOLLOWING' or self.state == 'MOVING_FORWARD'):
+            action = 'CLOCKWISE_ROTATION' if self.rotation_wise else 'COUNTERCLOCKWISE_ROTATION'
+            print('Non-Pikachu in middle-bottom, stopping')
+            self.state = 'SEARCHING'
+            self.rotation_step = 0
+            self.rotation_count = 0
+
         return action
 
     def stop_nav(self):

@@ -9,10 +9,10 @@ from pros_car_py.mode_manager import (
 )
 
 MODES_REGISTRY = {
+    "mode_auto_nav": ("Auto Navigation", AutoNavMode),
     "mode_vehicle": ("Control Vehicle", VehicleMode),
     "mode_arm": ("Manual Arm Control", ArmMode),
     "mode_crane": ("Manual Crane Control", CraneMode),
-    "mode_auto_nav": ("Auto Navigation", AutoNavMode),
     "mode_auto_arm": ("Automatic Arm Mode", AutoArmMode),
 }
 

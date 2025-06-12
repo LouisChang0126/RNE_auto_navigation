@@ -33,7 +33,13 @@ class DataProcessor:
             return list(self.ros_communicator.get_latest_camera_x_multi_depth().data)
         else:
             return None
-
+        
+    def get_action_detection(self):
+        if self.ros_communicator.get_latest_action_detection() is not None:
+            return self.ros_communicator.get_latest_action_detection().data
+        else:
+            return None
+        
     def get_processed_lidar(self):
         lidar_msg = self.ros_communicator.get_latest_lidar()
         angle_min = lidar_msg.angle_min

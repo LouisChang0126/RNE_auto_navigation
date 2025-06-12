@@ -86,6 +86,8 @@ class YoloDetectionNode(Node):
             pikachu_x = None
             # 新增：用於action_detection的變數
             pikachu_in_middle_third = False
+            pikachu_in_left_third = False
+            pikachu_in_right_third = False
             pikachu_in_middle_bottom = False
             non_pikachu_in_middle_bottom = False
             
@@ -125,13 +127,17 @@ class YoloDetectionNode(Node):
                         # 新增：檢查Pikachu是否在中間1/3
                         if self.image_width / 3 <= x <= 2 * self.image_width / 3:
                             pikachu_in_middle_third = True
-                            # 檢查是否在最下面1/6
-                            if 5 * self.image_height / 6 <= y <= self.image_height:
-                                pikachu_in_middle_bottom = True
+                        elif x < self.image_width / 3:
+                            pikachu_in_left_third = True
+                        elif x > 2 * self.image_width / 3:
+                            pikachu_in_right_third = True
+                        # 檢查是否在最下面1/5
+                        if 4 * self.image_height / 5 <= y <= self.image_height:
+                            pikachu_in_middle_bottom = True
                     else:
-                        # 新增：檢查非Pikachu是否在中間1/3且最下面1/6
+                        # 新增：檢查非Pikachu是否在中間1/3且最下面1/5
                         if (self.image_width / 3 <= x <= 2 * self.image_width / 3 and
-                            5 * self.image_height / 6 <= y <= self.image_height):
+                            4 * self.image_height / 5 <= y <= self.image_height):
                             non_pikachu_in_middle_bottom = True
             
             # 發布檢測結果
@@ -162,13 +168,19 @@ class YoloDetectionNode(Node):
             action_detection_msg = String()
             if pikachu_in_middle_bottom:
                 action_detection_msg.data = 'STOP'
-                self.get_logger().info('Pikachu in middle 1/3 and bottom 1/6, action: STOP')
+                self.get_logger().info('Pikachu in bottom 1/5, action: STOP')# middle 1/3 and
             elif non_pikachu_in_middle_bottom:
                 action_detection_msg.data = 'ROTATE'
-                self.get_logger().info('Non-Pikachu in middle 1/3 and bottom 1/6, action: ROTATE')
+                self.get_logger().info('Non-Pikachu in middle 1/3 and bottom 1/5, action: ROTATE')
             elif pikachu_in_middle_third:
                 action_detection_msg.data = 'FORWARD'
                 self.get_logger().info('Pikachu in middle 1/3, action: FORWARD')
+            elif pikachu_in_left_third:
+                action_detection_msg.data = 'COUNTERCLOCKWISE_ROTATION'
+                self.get_logger().info('Pikachu in left 1/3, action: COUNTERCLOCKWISE_ROTATION')
+            elif pikachu_in_right_third:
+                action_detection_msg.data = 'CLOCKWISE_ROTATION'
+                self.get_logger().info('Pikachu in right 1/3, action: CLOCKWISE_ROTATION')
             else:
                 action_detection_msg.data = 'NONE'
                 self.get_logger().info('No relevant detections, action: NONE')
