@@ -334,14 +334,228 @@ class Nav2Processing:
 
 #         self.state = 'SEARCHING'
         
-#         self.forward_step = 0
-#         self.rotation_step = 0
+#         self.X = -8
+#         self.Y_step = 0
+#         self.rotation_angle = 0
 #         self.GO_Y_step = 0
 #         self.search_dir = True  # True: clockwise, False: counterclockwise
+#         self.x_to_go = 0
         
 #         # 參數（可根據機器人調整）
-#         self.rotation_steps = 90  # 轉90度所需的步數
-#         self.forward_steps = 100  # 每次前進的步數
+#         self.forward_steps = 170.0  # 每次前進的步數
+#         self.right_rotate_angle = 90 / 46
+#         self.left_rotate_angle = - 90 / 52
+
+#     def reset_nav_process(self):
+#         self.finishFlag = False
+#         self.recordFlag = 0
+#         self.goal_published_flag = False
+
+#         self.rotation_angle = 0
+#         self.GO_Y_step = 0
+#         self.search_dir = True
+#         self.state = 'SEARCHING'
+#         self.x_to_go = 0
+#         self.X = -8
+#         self.Y_step = 0
+
+#     def finish_nav_process(self):
+#         self.finishFlag = True
+#         self.recordFlag = 1
+
+#     def get_finish_flag(self):
+#         return self.finishFlag
+
+
+#     def camera_nav_unity(self):
+#         """實現導航邏輯，返回動作字串"""
+#         action_detection = self.data_processor.get_action_detection() #皮卡丘相關訊息
+#         door_detection = self.data_processor.get_door_detection() #門相關訊息
+
+#         if action_detection == None or door_detection == None:
+#             if action_detection == None:
+#                 print("No action detection data available.")
+#             if door_detection == None:
+#                 print("No door detection data available.")
+#             return "STOP"
+        
+#         action = "STOP"
+#         print(f'Current state: {self.state}, Door: {door_detection}')## Pikachu detection: {action_detection},
+
+#         if action_detection == 'STOP' and self.GO_Y_step >= 3:
+#             return 'STOP'
+#         if self.state == 'SEARCHING':
+#             if self.GO_Y_step >= 3:
+#                 #搜尋皮卡丘
+#                 action = 'FORWARD_SLOW'
+#                 if action_detection == 'COUNTERCLOCKWISE_ROTATION':
+#                     # 發現皮卡丘在左邊
+#                     self.search_dir = False
+#                     self.rotation_angle += self.left_rotate_angle
+#                     action = 'COUNTERCLOCKWISE_ROTATION'
+#                     print('Pikachu detected in left, turning left')
+#                 elif action_detection == 'CLOCKWISE_ROTATION':
+#                     # 發現皮卡丘在右邊
+#                     self.search_dir = True
+#                     self.rotation_angle += self.right_rotate_angle
+#                     action = 'CLOCKWISE_ROTATION'
+#                     print('Pikachu detected in right, turning right')
+#                 elif action_detection == 'FORWARD':
+#                     # 發現皮卡丘，進入追蹤狀態
+#                     action = 'FORWARD_SLOW'
+#                     print('Pikachu detected')
+#                 else:
+#                     if self.search_dir:
+#                         self.rotation_angle += self.right_rotate_angle
+#                         action = 'CLOCKWISE_ROTATION'
+#                     else:
+#                         self.rotation_angle += self.left_rotate_angle
+#                         action = 'COUNTERCLOCKWISE_ROTATION'
+#                     print('No Pikachu detected')
+            
+#             else:
+#                 # 旋轉搜尋門
+#                 if door_detection == 'COUNTERCLOCKWISE_ROTATION':
+#                     # 發現門在左邊
+#                     self.search_dir = False
+#                     self.rotation_angle += self.left_rotate_angle
+#                     action = 'COUNTERCLOCKWISE_ROTATION'
+#                     print('Door detected in left, turning left')
+#                 elif door_detection == 'CLOCKWISE_ROTATION':
+#                     # 發現門在右邊
+#                     self.search_dir = True
+#                     self.rotation_angle += self.right_rotate_angle
+#                     action = 'CLOCKWISE_ROTATION'
+#                     print('Door detected in right, turning right')
+#                 elif door_detection == 'FORWARD':
+#                     # 發現門，進入追蹤狀態
+#                     # if self.GO_Y_step == 0:
+#                     if self.rotation_angle > 45:
+#                         self.x_to_go = 1.5 * self.forward_steps
+#                     elif self.rotation_angle > 0:
+#                         self.x_to_go = 0.5 * self.forward_steps
+#                     elif self.rotation_angle < -45:
+#                         self.x_to_go = - 1.5 * self.forward_steps
+#                     else:
+#                         self.x_to_go = - 0.5 * self.forward_steps
+#                     # else:
+#                     #     if self.rotation_angle > 65:
+#                     #         self.x_to_go = 2 * self.forward_steps
+#                     #     elif self.rotation_angle > 35:
+#                     #         self.x_to_go = 1.2 * self.forward_steps
+#                     #     elif self.rotation_angle > 0:
+#                     #         self.x_to_go = 1 * self.forward_steps
+#                     #     elif self.rotation_angle < -65:
+#                     #         self.x_to_go = -3 * self.forward_steps
+#                     #     elif self.rotation_angle < -35:
+#                     #         self.x_to_go = -2 * self.forward_steps
+#                     #     else:
+#                     #         self.x_to_go = -1 * self.forward_steps
+#                     self.state = 'FACE_LEFT' if self.rotation_angle < 0 else 'FACE_RIGHT'
+#                     action = 'STOP'
+#                     print('Door detected, switching to FOLLOWING state')
+#                 else:
+#                     if self.search_dir:
+#                         if self.rotation_angle <= 90:
+#                             # 旋轉面向右
+#                             self.rotation_angle += self.right_rotate_angle
+#                             action = 'CLOCKWISE_ROTATION'
+#                         else:
+#                             # 旋轉面向左
+#                             self.search_dir = False
+#                             self.rotation_angle += self.left_rotate_angle
+#                             action = 'COUNTERCLOCKWISE_ROTATION'
+#                     else:
+#                         if self.rotation_angle >= -90:
+#                             # 旋轉面向左
+#                             self.rotation_angle += self.left_rotate_angle
+#                             action = 'COUNTERCLOCKWISE_ROTATION'
+#                         else:
+#                             # 旋轉面向右
+#                             self.search_dir = True
+#                             self.rotation_angle += self.right_rotate_angle
+#                             action = 'CLOCKWISE_ROTATION'
+
+#         elif self.state == 'FACE_LEFT':
+#             if self.rotation_angle <= -90:
+#                 # 完成面向左
+#                 self.state = 'GO_X'
+#                 action = 'STOP'
+#             else:
+#                 self.rotation_angle += self.left_rotate_angle
+#                 action = 'COUNTERCLOCKWISE_ROTATION'
+
+#         elif self.state == 'FACE_RIGHT':
+#             if self.rotation_angle >= 90:
+#                 # 完成面向右
+#                 self.state = 'GO_X'
+#                 action = 'STOP'
+#             else:
+#                 self.rotation_angle += self.right_rotate_angle
+#                 action = 'CLOCKWISE_ROTATION'
+
+#         elif self.state == 'FACE_FRONT':
+#             if self.rotation_angle < 0.5 and self.rotation_angle > -0.5:
+#                 # 完成面向前
+#                 self.state = 'GO_Y'
+#                 action = 'STOP'
+#                 self.Y_step = 0
+#             elif self.rotation_angle > 0:
+#                 self.rotation_angle -= 1
+#                 action = 'COUNTERCLOCKWISE_ROTATION'
+#             else:
+#                 self.rotation_angle += self.right_rotate_angle
+#                 action = 'CLOCKWISE_ROTATION'
+
+#         elif self.state == 'GO_X':
+#             if self.X == self.x_to_go:
+#                 # 完成前進
+#                 self.state = 'FACE_FRONT'
+#                 action = 'STOP'
+#             else:
+#                 if self.x_to_go < 0:
+#                     self.X -= 1
+#                 else:
+#                     self.X += 1
+#                 action = 'FORWARD'
+
+#         elif self.state == 'GO_Y':
+#             if self.Y_step > self.forward_steps * 1.05:
+#                 # 完成前進
+#                 self.state = 'SEARCHING'
+#                 self.GO_Y_step += 1
+#                 action = 'STOP'
+#             else:
+#                 self.Y_step += 1
+#                 action = 'FORWARD'
+            
+#         print(f'Action: {action}, Rotation angle: {self.rotation_angle}, X: {self.X}|{self.x_to_go}')
+#         return action
+
+#     def stop_nav(self):
+#         return "STOP"
+
+# class Nav2Processing_door_random:
+#     def __init__(self, ros_communicator, data_processor):
+#         self.ros_communicator = ros_communicator
+#         self.data_processor = data_processor
+#         self.finishFlag = False
+#         self.global_plan_msg = None
+#         self.index = 0
+#         self.index_length = 0
+#         self.recordFlag = 0
+#         self.goal_published_flag = False
+
+#         self.state = 'SEARCHING'
+        
+#         self.forward_step = 0
+#         self.rotation_step = 0
+#         self.rotation_wise = True  # True: clockwise, False: counterclockwise
+#         self.passed_doors = 0
+        
+#         # 參數（可根據機器人調整）
+#         self.rotation_steps = 180  # 完成一圈（360度）所需的步數
+#         self.forward_steps = 200  # 每次前進的步數
 
 #     def reset_nav_process(self):
 #         self.finishFlag = False
@@ -371,107 +585,139 @@ class Nav2Processing:
 #         action = "STOP"
 #         print(f'Current state: {self.state}, Pikachu detection: {action_detection}, Door: {door_detection}')
 
-#         if action_detection == 'STOP' and self.GO_Y_step >= 3:
+#         if action_detection == 'STOP':
 #             return 'STOP'
 #         if self.state == 'SEARCHING':
-#             if self.GO_Y_step >= 3:
-#                 #搜尋皮卡丘
-#                 action = 'FORWARD_SLOW'
+#             if self.passed_doors >= 3:
+#                 # 旋轉搜尋皮卡丘
+#                 self.rotation_step += 1
+#                 action = 'CLOCKWISE_ROTATION' if self.rotation_wise else 'COUNTERCLOCKWISE_ROTATION'
+                
 #                 if action_detection == 'COUNTERCLOCKWISE_ROTATION':
 #                     # 發現皮卡丘在左邊
-#                     self.rotation_step -= 1
-#                     action = 'COUNTERCLOCKWISE_ROTATION_MEDIAN'
+#                     self.rotation_wise = False
+#                     self.rotation_step = 0
+#                     action = 'COUNTERCLOCKWISE_ROTATION'
 #                     print('Pikachu detected in left, turning left')
 #                 elif action_detection == 'CLOCKWISE_ROTATION':
 #                     # 發現皮卡丘在右邊
-#                     action = 'CLOCKWISE_ROTATION_MEDIAN'
+#                     self.rotation_wise = True
+#                     self.rotation_step = 0
+#                     action = 'CLOCKWISE_ROTATION'
 #                     print('Pikachu detected in right, turning right')
 #                 elif action_detection == 'FORWARD':
 #                     # 發現皮卡丘，進入追蹤狀態
+#                     self.state = 'FOLLOWING'
+#                     self.rotation_step = 0
 #                     action = 'FORWARD_SLOW'
-#                     print('Pikachu detected')
-#                 else:
-#                     action = 'CLOCKWISE_ROTATION_MEDIAN'
-#                     print('No Pikachu detected')
-            
+#                     print('Pikachu detected, switching to FOLLOWING state')
+#                 elif self.rotation_step >= self.rotation_steps:
+#                     # 完成一圈旋轉
+#                     self.rotation_step = 0
+#                     self.state = 'MOVING_FORWARD'
+#                     self.forward_step = 0
+#                     action = 'FORWARD'
+#                     print('No Pikachu detected after rotation, moving forward')
 #             else:
-#                 #搜尋門
-#                 if action_detection == 'DOOR_DETECTED':
-#                     # 發現門在中間
-#                     self.state = 'FACE_LEFT' if self.rotation_step < 0 else 'FACE_RIGHT'
-#                     action = 'COUNTERCLOCKWISE_ROTATION_MEDIAN' if self.rotation_step < 0 else 'CLOCKWISE_ROTATION_MEDIAN'
-#                     self.rotation_step -= 1 if self.rotation_step < 0 else -1
-#                     print('Door detected in middle')
-#                 else:
-#                     if self.search_dir:
-#                         if self.rotation_step <= self.rotation_steps:
-#                             # 旋轉面向右
-#                             self.rotation_step += 1
-#                             action = 'CLOCKWISE_ROTATION_MEDIAN'
-#                         else:
-#                             # 旋轉面向左
-#                             self.search_dir = False
-#                             self.rotation_step -= 1
-#                             action = 'COUNTERCLOCKWISE_ROTATION_MEDIAN'
-#                     else:
-#                         if self.rotation_step >= -1 * self.rotation_steps:
-#                             # 旋轉面向左
-#                             self.rotation_step -= 1
-#                             action = 'COUNTERCLOCKWISE_ROTATION_MEDIAN'
-#                         else:
-#                             # 旋轉面向右
-#                             self.search_dir = True
-#                             self.rotation_step += 1
-#                             action = 'CLOCKWISE_ROTATION_MEDIAN'
-
-#         elif self.state == 'FACE_LEFT':
-#             self.rotation_step -= 1
-#             action = 'COUNTERCLOCKWISE_ROTATION_MEDIAN'
-#             if self.rotation_step <= -1 * self.rotation_steps:
-#                 # 完成面向左
-#                 self.state = 'GO_X'
-#                 self.forward_step = 0
-#                 action = 'FORWARD'
-
-#         elif self.state == 'FACE_RIGHT':
-#             self.rotation_step += 1
-#             action = 'CLOCKWISE_ROTATION_MEDIAN'
-#             if self.rotation_step >= self.rotation_steps:
-#                 # 完成面向右
-#                 self.state = 'GO_X'
-#                 self.forward_step = 0
-#                 action = 'FORWARD'
-
-#         elif self.state == 'FACE_FRONT':
-#             if self.rotation_step < 0:
+#                 # 旋轉搜尋門
 #                 self.rotation_step += 1
-#                 action = 'CLOCKWISE_ROTATION_MEDIAN'
-#             elif self.rotation_step > 0:
-#                 self.rotation_step -= 1
-#                 action = 'COUNTERCLOCKWISE_ROTATION_MEDIAN'
-#             elif self.rotation_step == 0:
-#                 # 完成面向前
-#                 self.state = 'GO_Y'
-#                 self.forward_step = 0
-#                 action = 'FORWARD'
+#                 action = 'CLOCKWISE_ROTATION' if self.rotation_wise else 'COUNTERCLOCKWISE_ROTATION'
+                
+#                 if door_detection == 'COUNTERCLOCKWISE_ROTATION':
+#                     # 發現門在左邊
+#                     self.rotation_wise = False
+#                     self.rotation_step = 0
+#                     action = 'COUNTERCLOCKWISE_ROTATION'
+#                     print('Door detected in left, turning left')
+#                 elif door_detection == 'CLOCKWISE_ROTATION':
+#                     # 發現門在右邊
+#                     self.rotation_wise = True
+#                     self.rotation_step = 0
+#                     action = 'CLOCKWISE_ROTATION'
+#                     print('Door detected in right, turning right')
+#                 elif door_detection == 'FORWARD':
+#                     # 發現門，進入追蹤狀態
+#                     self.state = 'FOLLOWING'
+#                     self.rotation_step = 0
+#                     action = 'FORWARD_SLOW'
+#                     print('Door detected, switching to FOLLOWING state')
+#                 elif self.rotation_step >= self.rotation_steps:
+#                     # 完成一圈旋轉
+#                     self.rotation_step = 0
+#                     self.state = 'MOVING_FORWARD'
+#                     self.forward_step = 0
+#                     action = 'FORWARD'
+#                     print('No Door detected after rotation, moving forward')
 
-#         elif self.state == 'GO_X':
+
+#         elif self.state == 'FOLLOWING':
+#             if self.passed_doors >= 3:
+#                 # 追蹤皮卡丘
+#                 if action_detection == 'STOP':
+#                     action = 'STOP'
+#                     print('Pikachu in middle-bottom, stopping')
+#                     self.state = 'SEARCHING'
+#                     self.rotation_step = 0
+#                 elif action_detection == 'FORWARD':
+#                     action = 'FORWARD_SLOW'
+#                     print('Moving forward towards Pikachu')
+#                 elif action_detection == 'COUNTERCLOCKWISE_ROTATION':
+#                     # 發現皮卡丘在左邊
+#                     self.rotation_wise = False
+#                     action = 'COUNTERCLOCKWISE_ROTATION'
+#                     print('Pikachu detected in left, turning left')
+#                 elif action_detection == 'CLOCKWISE_ROTATION':
+#                     # 發現皮卡丘在右邊
+#                     self.rotation_wise = True
+#                     action = 'CLOCKWISE_ROTATION'
+#                     print('Pikachu detected in right, turning right')
+#                 else:
+#                     # 失去皮卡丘，回到搜尋狀態
+#                     self.state = 'SEARCHING'
+#                     self.rotation_step = 0
+#                     action = 'CLOCKWISE_ROTATION' if self.rotation_wise else 'COUNTERCLOCKWISE_ROTATION'
+#                     print('Lost Pikachu, switching to SEARCHING state')
+#             else:
+#                 # 追蹤門
+#                 if door_detection == 'FORWARD':
+#                     action = 'FORWARD_SLOW'
+#                     print('Moving forward towards Door')
+#                 elif door_detection == 'COUNTERCLOCKWISE_ROTATION':
+#                     # 發現門在左邊
+#                     self.rotation_wise = False
+#                     action = 'COUNTERCLOCKWISE_ROTATION'
+#                     print('Door detected in left, turning left')
+#                 elif door_detection == 'CLOCKWISE_ROTATION':
+#                     # 發現門在右邊
+#                     self.rotation_wise = True
+#                     action = 'CLOCKWISE_ROTATION'
+#                     print('Door detected in right, turning right')
+#                 else:
+#                     # 失去門，回到當通過
+#                     self.state = 'SEARCHING'
+#                     self.rotation_step = 0
+#                     action = 'CLOCKWISE_ROTATION' if self.rotation_wise else 'COUNTERCLOCKWISE_ROTATION'
+#                     print('Lost Door, switching to SEARCHING state')
+#                     self.passed_doors += 1
+
+#         elif self.state == 'MOVING_FORWARD':
+#             # 前進一段距離後繼續搜尋
 #             self.forward_step += 1
 #             action = 'FORWARD'
+#             # print(f'Moving forward, step {self.forward_step}/{self.forward_steps}')
 #             if self.forward_step >= self.forward_steps:
-#                 # 完成前進
-#                 self.state = 'FACE_FRONT'
-#                 action = 'CLOCKWISE_ROTATION_MEDIAN' if self.rotation_step < 0 else 'COUNTERCLOCKWISE_ROTATION_MEDIAN'
-
-#         elif self.state == 'GO_Y':
-#             self.forward_step += 1
-#             action = 'FORWARD'
-#             if self.forward_step >= self.forward_steps:
-#                 # 完成前進
 #                 self.state = 'SEARCHING'
-#                 self.GO_Y_step += 1
-            
-#         print(f'Action: {action}, Rotation step: {self.rotation_step}')
+#                 self.rotation_step = 0
+#                 action = 'CLOCKWISE_ROTATION' if self.rotation_wise else 'COUNTERCLOCKWISE_ROTATION'
+#                 print('Finished moving forward, resuming search')
+
+#         # 如果收到 ROTATE，重置搜尋
+#         if action_detection == 'ROTATE' and (self.state == 'FOLLOWING' or self.state == 'MOVING_FORWARD'):
+#             action = 'CLOCKWISE_ROTATION' if self.rotation_wise else 'COUNTERCLOCKWISE_ROTATION'
+#             print('Non-Pikachu in middle-bottom, stopping')
+#             self.state = 'SEARCHING'
+#             self.rotation_step = 0
+
 #         return action
 
 #     def stop_nav(self):
@@ -490,19 +736,32 @@ class Nav2Processing_door_random:
 
         self.state = 'SEARCHING'
         
-        self.forward_step = 0
-        self.rotation_step = 0
-        self.rotation_wise = True  # True: clockwise, False: counterclockwise
-        self.passed_doors = 0
+        self.X = -8
+        self.Y_step = 0
+        self.rotation_angle = 0
+        self.GO_Y_step = 0
+        self.search_dir = True  # True: clockwise, False: counterclockwise
+        self.x_to_go = 0
+        self.dodof = 0
         
         # 參數（可根據機器人調整）
-        self.rotation_steps = 180  # 完成一圈（360度）所需的步數
-        self.forward_steps = 200  # 每次前進的步數
+        self.forward_steps = 170.0  # 每次前進的步數
+        self.right_rotate_angle = 90 / 46
+        self.left_rotate_angle = - 90 / 52
 
     def reset_nav_process(self):
         self.finishFlag = False
         self.recordFlag = 0
         self.goal_published_flag = False
+
+        self.rotation_angle = 0
+        self.GO_Y_step = 0
+        self.search_dir = True
+        self.state = 'SEARCHING'
+        self.x_to_go = 0
+        self.X = -8
+        self.Y_step = 0
+        self.dodof = 0
 
     def finish_nav_process(self):
         self.finishFlag = True
@@ -525,141 +784,89 @@ class Nav2Processing_door_random:
             return "STOP"
         
         action = "STOP"
-        print(f'Current state: {self.state}, Pikachu detection: {action_detection}, Door: {door_detection}')
+        print(f'Current state: {self.state}, Door: {door_detection}')## Pikachu detection: {action_detection},
 
         if action_detection == 'STOP':
             return 'STOP'
         if self.state == 'SEARCHING':
-            if self.passed_doors >= 3:
-                # 旋轉搜尋皮卡丘
-                self.rotation_step += 1
-                action = 'CLOCKWISE_ROTATION' if self.rotation_wise else 'COUNTERCLOCKWISE_ROTATION'
-                
-                if action_detection == 'COUNTERCLOCKWISE_ROTATION':
-                    # 發現皮卡丘在左邊
-                    self.rotation_wise = False
-                    self.rotation_step = 0
-                    action = 'COUNTERCLOCKWISE_ROTATION'
-                    print('Pikachu detected in left, turning left')
-                elif action_detection == 'CLOCKWISE_ROTATION':
-                    # 發現皮卡丘在右邊
-                    self.rotation_wise = True
-                    self.rotation_step = 0
-                    action = 'CLOCKWISE_ROTATION'
-                    print('Pikachu detected in right, turning right')
-                elif action_detection == 'FORWARD':
-                    # 發現皮卡丘，進入追蹤狀態
-                    self.state = 'FOLLOWING'
-                    self.rotation_step = 0
-                    action = 'FORWARD_SLOW'
-                    print('Pikachu detected, switching to FOLLOWING state')
-                elif self.rotation_step >= self.rotation_steps:
-                    # 完成一圈旋轉
-                    self.rotation_step = 0
-                    self.state = 'MOVING_FORWARD'
-                    self.forward_step = 0
-                    action = 'FORWARD'
-                    print('No Pikachu detected after rotation, moving forward')
-            else:
-                # 旋轉搜尋門
-                self.rotation_step += 1
-                action = 'CLOCKWISE_ROTATION' if self.rotation_wise else 'COUNTERCLOCKWISE_ROTATION'
-                
-                if door_detection == 'COUNTERCLOCKWISE_ROTATION':
-                    # 發現門在左邊
-                    self.rotation_wise = False
-                    self.rotation_step = 0
-                    action = 'COUNTERCLOCKWISE_ROTATION'
-                    print('Door detected in left, turning left')
-                elif door_detection == 'CLOCKWISE_ROTATION':
-                    # 發現門在右邊
-                    self.rotation_wise = True
-                    self.rotation_step = 0
-                    action = 'CLOCKWISE_ROTATION'
-                    print('Door detected in right, turning right')
-                elif door_detection == 'FORWARD':
-                    # 發現門，進入追蹤狀態
-                    self.state = 'FOLLOWING'
-                    self.rotation_step = 0
-                    action = 'FORWARD_SLOW'
-                    print('Door detected, switching to FOLLOWING state')
-                elif self.rotation_step >= self.rotation_steps:
-                    # 完成一圈旋轉
-                    self.rotation_step = 0
-                    self.state = 'MOVING_FORWARD'
-                    self.forward_step = 0
-                    action = 'FORWARD'
-                    print('No Door detected after rotation, moving forward')
-
-
-        elif self.state == 'FOLLOWING':
-            if self.passed_doors >= 3:
-                # 追蹤皮卡丘
-                if action_detection == 'STOP':
-                    action = 'STOP'
-                    print('Pikachu in middle-bottom, stopping')
-                    self.state = 'SEARCHING'
-                    self.rotation_step = 0
-                elif action_detection == 'FORWARD':
-                    action = 'FORWARD_SLOW'
-                    print('Moving forward towards Pikachu')
-                elif action_detection == 'COUNTERCLOCKWISE_ROTATION':
-                    # 發現皮卡丘在左邊
-                    self.rotation_wise = False
-                    action = 'COUNTERCLOCKWISE_ROTATION'
-                    print('Pikachu detected in left, turning left')
-                elif action_detection == 'CLOCKWISE_ROTATION':
-                    # 發現皮卡丘在右邊
-                    self.rotation_wise = True
-                    action = 'CLOCKWISE_ROTATION'
-                    print('Pikachu detected in right, turning right')
-                else:
-                    # 失去皮卡丘，回到搜尋狀態
-                    self.state = 'SEARCHING'
-                    self.rotation_step = 0
-                    action = 'CLOCKWISE_ROTATION' if self.rotation_wise else 'COUNTERCLOCKWISE_ROTATION'
-                    print('Lost Pikachu, switching to SEARCHING state')
-            else:
-                # 追蹤門
-                if door_detection == 'FORWARD':
-                    action = 'FORWARD_SLOW'
-                    print('Moving forward towards Door')
-                elif door_detection == 'COUNTERCLOCKWISE_ROTATION':
-                    # 發現門在左邊
-                    self.rotation_wise = False
-                    action = 'COUNTERCLOCKWISE_ROTATION'
-                    print('Door detected in left, turning left')
-                elif door_detection == 'CLOCKWISE_ROTATION':
-                    # 發現門在右邊
-                    self.rotation_wise = True
-                    action = 'CLOCKWISE_ROTATION'
-                    print('Door detected in right, turning right')
-                else:
-                    # 失去門，回到當通過
-                    self.state = 'SEARCHING'
-                    self.rotation_step = 0
-                    action = 'CLOCKWISE_ROTATION' if self.rotation_wise else 'COUNTERCLOCKWISE_ROTATION'
-                    print('Lost Door, switching to SEARCHING state')
-                    self.passed_doors += 1
-
-        elif self.state == 'MOVING_FORWARD':
-            # 前進一段距離後繼續搜尋
-            self.forward_step += 1
+            #搜尋皮卡丘
             action = 'FORWARD'
-            # print(f'Moving forward, step {self.forward_step}/{self.forward_steps}')
-            if self.forward_step >= self.forward_steps:
+            if action_detection == 'COUNTERCLOCKWISE_ROTATION':
+                # 發現皮卡丘在左邊
+                self.search_dir = False
+                self.rotation_angle += self.left_rotate_angle
+                action = 'COUNTERCLOCKWISE_ROTATION'
+                print('Pikachu detected in left, turning left')
+            elif action_detection == 'CLOCKWISE_ROTATION':
+                # 發現皮卡丘在右邊
+                self.search_dir = True
+                self.rotation_angle += self.right_rotate_angle
+                action = 'CLOCKWISE_ROTATION'
+                print('Pikachu detected in right, turning right')
+            elif action_detection == 'FORWARD':
+                # 發現皮卡丘，進入追蹤狀態
+                action = 'FORWARD'
+                print('Pikachu detected')
+            # else:
+            #     if self.search_dir:
+            #         self.rotation_angle += self.right_rotate_angle
+            #         action = 'CLOCKWISE_ROTATION'
+            #     else:
+            #         self.rotation_angle += self.left_rotate_angle
+            #         action = 'COUNTERCLOCKWISE_ROTATION'
+            #     print('No Pikachu detected')
+            
+            # else:
+            # 旋轉搜尋門
+            elif door_detection == 'COUNTERCLOCKWISE_ROTATION':
+                # 發現門在左邊
+                self.search_dir = False
+                self.rotation_angle += self.left_rotate_angle
+                action = 'COUNTERCLOCKWISE_ROTATION'
+                print('Door detected in left, turning left')
+            elif door_detection == 'CLOCKWISE_ROTATION':
+                # 發現門在右邊
+                self.search_dir = True
+                self.rotation_angle += self.right_rotate_angle
+                action = 'CLOCKWISE_ROTATION'
+                print('Door detected in right, turning right')
+            elif door_detection == 'FORWARD':
+                # 發現門，進入追蹤狀態
+                self.state = 'FACE_LEFT' if self.rotation_angle < 0 else 'FACE_RIGHT'
+                action = 'STOP'
+                self.dodof = 0
+                print('Door detected, switching to FOLLOWING state')
+            else:
+                if self.search_dir:
+                    if self.rotation_angle <= 90:
+                        # 旋轉面向右
+                        self.rotation_angle += self.right_rotate_angle
+                        action = 'CLOCKWISE_ROTATION'
+                    else:
+                        # 旋轉面向左
+                        self.search_dir = False
+                        self.rotation_angle += self.left_rotate_angle
+                        action = 'COUNTERCLOCKWISE_ROTATION'
+                else:
+                    if self.rotation_angle >= -90:
+                        # 旋轉面向左
+                        self.rotation_angle += self.left_rotate_angle
+                        action = 'COUNTERCLOCKWISE_ROTATION'
+                    else:
+                        # 旋轉面向右
+                        self.search_dir = True
+                        self.rotation_angle += self.right_rotate_angle
+                        action = 'CLOCKWISE_ROTATION'
+
+        elif self.state == 'FACE_LEFT' or self.state == 'FACE_RIGHT':
+            self.dodof += 1
+            action = 'FORWARD'
+            if self.dodof > 185:
                 self.state = 'SEARCHING'
-                self.rotation_step = 0
-                action = 'CLOCKWISE_ROTATION' if self.rotation_wise else 'COUNTERCLOCKWISE_ROTATION'
-                print('Finished moving forward, resuming search')
-
-        # 如果收到 ROTATE，重置搜尋
-        if action_detection == 'ROTATE' and (self.state == 'FOLLOWING' or self.state == 'MOVING_FORWARD'):
-            action = 'CLOCKWISE_ROTATION' if self.rotation_wise else 'COUNTERCLOCKWISE_ROTATION'
-            print('Non-Pikachu in middle-bottom, stopping')
-            self.state = 'SEARCHING'
-            self.rotation_step = 0
-
+                action = 'STOP'
+                self.GO_Y_step += 1
+                
+        print(f'Action: {action}, Rotation angle: {self.rotation_angle}')
         return action
 
     def stop_nav(self):

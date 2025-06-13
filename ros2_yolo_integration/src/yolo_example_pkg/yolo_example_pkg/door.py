@@ -24,7 +24,7 @@ class YoloDetectionNode(Node):
         self.dist_coeffs = np.array([0.001750, -0.003776, -0.000528, -0.000228, 0.000000])
 
         model_path = os.path.join(
-            get_package_share_directory("yolo_example_pkg"), "models", "door_random_best.pt"
+            get_package_share_directory("yolo_example_pkg"), "models", "random_door_flip.pt"
         )
         try:
             self.model = YOLO(model_path)
@@ -85,10 +85,10 @@ class YoloDetectionNode(Node):
                             pikachu_in_left_third = True
                         elif x > 2 * self.image_width / 3:
                             pikachu_in_right_third = True
-                        if w * h > 0.6 * self.image_width * self.image_height:
+                        if w * h > 0.75 * self.image_width * self.image_height:
                             pikachu_large_enough = True
 
-                    elif class_name.lower() == 'door':
+                    elif class_name.lower() == 'passage':
                         if self.image_width / 3 <= x <= 2 * self.image_width / 3:
                             door_in_middle_third = True
                         elif x < self.image_width / 3:
