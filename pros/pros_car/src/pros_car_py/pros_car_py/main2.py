@@ -9,7 +9,7 @@ from pros_car_py.joint_config import JOINT_UPDATES_POSITIVE, JOINT_UPDATES_NEGAT
 from pros_car_py.car_controller import CarController
 from pros_car_py.arm_controller import ArmController
 from pros_car_py.data_processor import DataProcessor
-from pros_car_py.nav_processing import Nav2Processing
+from pros_car_py.nav_processing import Nav2Processing, Nav2Processing_door_random
 from pros_car_py.ros_communicator import RosCommunicator
 from pros_car_py.crane_controller import CraneController
 from pros_car_py.custom_control import CustomControl
@@ -28,7 +28,7 @@ def init_ros_node():
 def main():
     ros_communicator, ros_thread = init_ros_node()
     data_processor = DataProcessor(ros_communicator)
-    nav2_processing = Nav2Processing(ros_communicator, data_processor)
+    nav2_processing = Nav2Processing_door_random(ros_communicator, data_processor)
     ik_solver = PybulletRobotController(end_eff_index=5)
     car_controller = CarController(ros_communicator, nav2_processing)
     arm_controller = ArmController(

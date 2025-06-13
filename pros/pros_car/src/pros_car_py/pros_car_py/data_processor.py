@@ -40,6 +40,12 @@ class DataProcessor:
         else:
             return None
         
+    def get_door_detection(self):
+        if self.ros_communicator.get_latest_door_detection() is not None:
+            return self.ros_communicator.get_latest_door_detection().data
+        else:
+            return None
+        
     def get_processed_lidar(self):
         lidar_msg = self.ros_communicator.get_latest_lidar()
         angle_min = lidar_msg.angle_min

@@ -99,6 +99,14 @@ class RosCommunicator(Node):
             1,
         )
         
+        self.latest_door_detection = None
+        self.door_detection_sub = self.create_subscription(
+            String,
+            "/door_detection",
+            self.door_detection_callback,
+            1,
+        )
+
         # publish car_C_rear_wheel and car_C_front_wheel
         self.publisher_rear = self.create_publisher(
             Float32MultiArray, DeviceDataTypeEnum.car_C_rear_wheel, 1
@@ -295,6 +303,14 @@ class RosCommunicator(Node):
             return None
         return self.latest_action_detection
 
+    def door_detection_callback(self, msg):
+        self.latest_door_detection = msg
+
+    def get_latest_door_detection(self):
+        if self.latest_door_detection is None:
+            return None
+        return self.latest_door_detection
+    
     # YOLO coordinates callback
     def yolo_detection_position_callback(self, msg):
         """Callback to receive YOLO detected object coordinates."""
